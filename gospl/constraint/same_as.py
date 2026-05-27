@@ -2,6 +2,7 @@ from typing import List
 
 from .interface import Constraint
 from gospl.variable import Variable
+from gospl.utils import construct_mcx_gate, construct_cx_gate
 
 
 class SameAs(Constraint):
@@ -18,16 +19,13 @@ class SameAs(Constraint):
 
         for var1_qubit, var2_qubit in zip(variable_qubits[0], variable_qubits[1]):
             if circuit == None:
-                circuit = f"CX({var1_qubit}, {var2_qubit})"
+                circuit = construct_cx_gate(var1_qubit, var2_qubit)
             else:
-                circuit += f"\nCX({var1_qubit}, {var2_qubit})"
+                circuit += "\n" + construct_cx_gate(var1_qubit, var1_qubit)
 
-        gate = "C" * len(variable_qubits[1]) + "X("
-        for var2_qubit in variable_qubits[1]:
-            gate += f"{var2_qubit}, "  
-        gate += f"{signal_qubit})"
-
-        circuit += "\n" + gate
+        circuit += "\n" + \
+            construct_mcx_gate(
+                control_qubits=variable_qubits[1], target_qubit=signal_qubit)
         return circuit
 
     @property

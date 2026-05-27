@@ -3,6 +3,7 @@ from typing import List
 
 from .variable import Variable
 from .constraint import Constraint
+from .utils import construct_mcx_gate
 
 
 class CircuitBuilder:
@@ -66,14 +67,12 @@ class CircuitBuilder:
             used_ancillas += required_ancillas
             used_signal_qubits += 1
 
-        gate = "C" * (total_signal_qubits - 1) + "X("
-        for i in range(total_signal_qubits - 1):
-            signal_qubit = total_variable_qubits + i
-            gate += f"{signal_qubit}, "  
-        gate += f"{total_signal_qubits - 1})"
-
-        circuit += "\n" + gate
-        return circuit
+        signal_qubits = [
+            total_variable_qubits + i for i in range(total_signal_qubits - 1)
+        ]
+        circuit += "\n" + construct_mcx_gate(
+            control_qubits=signal_qubits, target_qubit=total_signal_qubits - 1
+        )
 
         # uncompute circuit
 
