@@ -20,6 +20,8 @@ class SameAs(Constraint):
 
         circuit.mcx(
             control_qubits=variable_registers[1], target_qubit=signal_register[used_signal_qubits])
+        
+        circuit.cx(variable_registers[0], variable_registers[1])
         return circuit
 
     @property
