@@ -26,9 +26,6 @@ class CircuitBuilder:
     def __init__(self, variables: List[Variable]):
         self.variables = variables
 
-    def _reset_counters(self) -> None:
-        pass
-
     def build(self) -> QuantumCircuit:
 
         # If needed, add value constraint for each variable
@@ -40,18 +37,18 @@ class CircuitBuilder:
 
         # Determine total number of qubits
         variable_registers = [
-            QuantumRegister(variable.qubit_count)
+            QuantumRegister(variable.qubit_count, variable.name)
             for variable in self.variables
         ]
 
         total_ancilla_qubits = sum(
             [constraint.ancilla_count for constraint in constraints])
         ancilla_register = AncillaRegister(
-            total_ancilla_qubits, name="ancillas")
+            total_ancilla_qubits, name="anc")
 
         total_signal_qubits = len(constraints) + 1
         signal_register = AncillaRegister(
-            total_signal_qubits, name="signals")
+            total_signal_qubits, name="sig")
 
         circuit = QuantumCircuit(
             *variable_registers, ancilla_register, signal_register)
