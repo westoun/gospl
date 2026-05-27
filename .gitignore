@@ -1,3 +1,4 @@
+*.qasm
 
 tmp/
 .DS_Store

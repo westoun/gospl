@@ -29,7 +29,7 @@ class CircuitBuilder:
     def _reset_counters(self) -> None:
         pass
 
-    def build(self) -> str:
+    def build(self) -> QuantumCircuit:
 
         # If needed, add value constraint for each variable
 

@@ -21,3 +21,7 @@ if __name__ == "__main__":
     circuit = builder.build()
 
     print(circuit)
+
+    qasm_circuit = dumps(circuit)
+    with open("oracle.qasm", "w") as target_file:
+        target_file.write(qasm_circuit)
