@@ -1,3 +1,5 @@
+from qiskit import QuantumCircuit
+from qiskit.circuit import QuantumRegister, AncillaRegister
 from typing import List
 
 from .interface import Constraint
@@ -21,10 +23,10 @@ class Not(Constraint):
         self.variables = constraint.variables
         self.constraint = constraint
 
-    def build(self, variable_qubits: List[int], ancilla_qubits: List[int], signal_qubit: int) -> str:
-        circuit = f"X({signal_qubit})"
-        circuit += "\n" + self.constraint.build(
-            variable_qubits, ancilla_qubits, signal_qubit
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
+        circuit.x(signal_register[used_signal_qubits])
+        circuit = self.constraint.build(
+            circuit, variable_registers, ancilla_register, used_ancillas, signal_register, used_signal_qubits
         )
         return circuit
 

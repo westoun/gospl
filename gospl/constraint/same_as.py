@@ -1,8 +1,9 @@
+from qiskit import QuantumCircuit
+from qiskit.circuit import QuantumRegister, AncillaRegister
 from typing import List
 
 from .interface import Constraint
 from gospl.variable import Variable
-from gospl.utils import construct_mcx_gate, construct_cx_gate
 
 
 class SameAs(Constraint):
@@ -11,21 +12,14 @@ class SameAs(Constraint):
     def __init__(self, var1: Variable, var2: Variable):
         self.variables = [var1, var2]
 
-    def build(self, variable_qubits: List[List[int]], ancilla_qubits: List[int], signal_qubit: int) -> str:
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
         assert len(
-            variable_qubits) == 2, f"SameAs constraint requires qubit ids for 2 variables. {len(variable_qubits)} were given."
+            variable_registers) == 2, f"SameAs constraint requires qubit ids for 2 variables. {len(variable_registers)} were given."
 
-        circuit = None
+        circuit.cx(variable_registers[0], variable_registers[1])
 
-        for var1_qubit, var2_qubit in zip(variable_qubits[0], variable_qubits[1]):
-            if circuit == None:
-                circuit = construct_cx_gate(var1_qubit, var2_qubit)
-            else:
-                circuit += "\n" + construct_cx_gate(var1_qubit, var1_qubit)
-
-        circuit += "\n" + \
-            construct_mcx_gate(
-                control_qubits=variable_qubits[1], target_qubit=signal_qubit)
+        circuit.mcx(
+            control_qubits=variable_registers[1], target_qubit=signal_register[used_signal_qubits])
         return circuit
 
     @property

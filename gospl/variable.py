@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 
@@ -16,3 +17,7 @@ class Variable:
         self.allowed = sorted(allowed)
 
         self.constraints = []
+
+    @property
+    def qubit_count(self) -> int:
+        return math.ceil(math.log2(len(self.allowed)))

@@ -2,6 +2,10 @@ from gospl.constraint import SameAs, Not
 from gospl.variable import Variable
 from gospl.builder import CircuitBuilder
 
+import qiskit
+from qiskit import QuantumCircuit
+from qiskit.qasm3 import dumps
+
 if __name__ == "__main__":
 
     colors = ["red", "blue"]

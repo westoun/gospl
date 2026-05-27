@@ -1,9 +1,23 @@
-import math
-from typing import List
+from qiskit import QuantumCircuit
+from qiskit.circuit import QuantumRegister, AncillaRegister
+from typing import List, Dict
 
 from .variable import Variable
 from .constraint import Constraint
-from .utils import construct_mcx_gate
+
+
+def extract_constraints(variables: List[Variable]) -> List[Constraint]:
+    constraints: List[Constraint] = []
+    for variable in variables:
+
+        # Add removal of invalid values constraint
+        # for each variable.
+
+        for constraint in variable.constraints:
+            if constraint not in constraints:
+                constraints.append(constraint)
+
+    return constraints
 
 
 class CircuitBuilder:
@@ -12,67 +26,62 @@ class CircuitBuilder:
     def __init__(self, variables: List[Variable]):
         self.variables = variables
 
+    def _reset_counters(self) -> None:
+        pass
+
     def build(self) -> str:
 
-        constraints: List[Constraint] = []
-        for variable in self.variables:
+        # If needed, add value constraint for each variable
 
-            # Add removal of invalid values constraint
-            # for each variable.
+        # Extract constraints from variables
+        constraints = extract_constraints(self.variables)
 
-            for constraint in variable.constraints:
-                if constraint not in constraints:
-                    constraints.append(constraint)
+        # Sort constraints to minimize depth
 
-        # Sort constraints to reduce depth
+        # Determine total number of qubits
+        variable_registers = [
+            QuantumRegister(variable.qubit_count)
+            for variable in self.variables
+        ]
 
-        # manage ancillas and build circuit
-        total_variable_qubits = 0
-
-        variable_qubit_mapping = {}
-        for variable in self.variables:
-            qubits_per_variable = math.ceil(math.log2(len(variable.allowed)))
-            variable_qubit_mapping[variable] = [
-                total_variable_qubits + i for i in range(qubits_per_variable)
-            ]
-            total_variable_qubits += qubits_per_variable
+        total_ancilla_qubits = sum(
+            [constraint.ancilla_count for constraint in constraints])
+        ancilla_register = AncillaRegister(
+            total_ancilla_qubits, name="ancillas")
 
         total_signal_qubits = len(constraints) + 1
+        signal_register = AncillaRegister(
+            total_signal_qubits, name="signals")
+
+        circuit = QuantumCircuit(
+            *variable_registers, ancilla_register, signal_register)
 
         used_ancillas = 0
         used_signal_qubits = 0
-
-        circuit = ""
         for constraint in constraints:
 
-            variable_qubits: List[List[int]] = []
-            for variable in constraint.variables:
-                variable_qubits.append(
-                    variable_qubit_mapping[variable]
-                )
+            variable_indices = [
+                self.variables.index(variable) for variable in constraint.variables
+            ]
 
-            required_ancillas = constraint.ancilla_count
-            ancilla_qubits = [
-                total_variable_qubits +
-                total_signal_qubits +
-                used_ancillas +
-                              i for i in range(required_ancillas)]
-            
-            signal_qubit = total_variable_qubits + used_signal_qubits
+            rel_variable_registers = [
+                variable_registers[variable_index]
+                for variable_index in variable_indices
+            ]
 
-            circuit += "\n" + constraint.build(
-                variable_qubits, ancilla_qubits, signal_qubit
+            constraint.build(
+                circuit,
+                variable_registers=rel_variable_registers,
+                ancilla_register=ancilla_register,
+                used_ancillas=used_ancillas,
+                signal_register=signal_register,
+                used_signal_qubits=used_signal_qubits
             )
 
-            used_ancillas += required_ancillas
+            used_ancillas += constraint.ancilla_count
             used_signal_qubits += 1
 
-        signal_qubits = [
-            total_variable_qubits + i for i in range(total_signal_qubits - 1)
-        ]
-        circuit += "\n" + construct_mcx_gate(
-            control_qubits=signal_qubits, target_qubit=total_signal_qubits - 1
-        )
+        circuit.mcx(control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
 
         # uncompute circuit
 
