@@ -20,17 +20,21 @@ class LessThan(Constraint):
 
         variable_register = variable_registers[0]
 
-        circuit.x(variable_register)
-
         bit_string = bin(self.value)[2:].zfill(len(variable_register))
-       
+
         for bit_i, bit_value in enumerate(bit_string):
+            circuit.x(variable_register[bit_i])
+
             if bit_value == "1":
                 control_qubits = variable_register[: bit_i + 1]
                 circuit.mcx(
                     control_qubits=control_qubits, target_qubit=signal_register[used_signal_qubits])
+                circuit.x(variable_register[bit_i])
 
-        circuit.x(variable_register)
+
+        for bit_i, bit_value in enumerate(bit_string):
+            if bit_value == "0":
+                circuit.x(variable_register[bit_i])
 
         return circuit
 
