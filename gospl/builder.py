@@ -1,6 +1,6 @@
 from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, AncillaRegister
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from .variable import Variable
 from .constraint import Constraint, LessThan
@@ -16,6 +16,72 @@ def extract_constraints(variables: List[Variable]) -> List[Constraint]:
     return constraints
 
 
+def add_allowed_value_constraints(variables: List[Variable]) -> None:
+    for variable in variables:
+        if 2 ** variable.qubit_count > len(variable.allowed):
+            LessThan(variable, len(variable.allowed))
+
+
+def add_constraints_to_circuit(
+    circuit: QuantumCircuit,
+    variable_registers: List[QuantumRegister],
+    ancilla_register: QuantumRegister,
+    signal_register: QuantumRegister,
+    variables: List[Variable], constraints: List[Constraint]
+) -> None:
+    used_ancillas = 0
+    used_signal_qubits = 0
+    for constraint in constraints:
+
+        variable_indices = [
+            variables.index(variable) for variable in constraint.variables
+        ]
+
+        rel_variable_registers = [
+            variable_registers[variable_index]
+            for variable_index in variable_indices
+        ]
+
+        constraint.build(
+            circuit,
+            variable_registers=rel_variable_registers,
+            ancilla_register=ancilla_register,
+            used_ancillas=used_ancillas,
+            signal_register=signal_register,
+            used_signal_qubits=used_signal_qubits
+        )
+        circuit.barrier()
+
+        used_ancillas += constraint.ancilla_count
+        used_signal_qubits += 1
+
+
+def merge_constraint_results(circuit: QuantumCircuit, signal_register: QuantumRegister) -> None:
+    circuit.x(signal_register[-1])
+    circuit.h(signal_register[-1])
+    circuit.mcx(
+        control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
+
+    circuit.barrier()
+
+
+def init_registers(variables: List[Variable], constraints: List[Constraint]) -> Tuple[List[QuantumRegister], QuantumRegister, QuantumRegister]:
+    variable_registers = [
+        QuantumRegister(variable.qubit_count, variable.name)
+        for variable in variables
+    ]
+
+    total_ancilla_qubits = sum(
+        [constraint.ancilla_count for constraint in constraints])
+    ancilla_register = AncillaRegister(
+        total_ancilla_qubits, name="anc")
+
+    total_signal_qubits = len(constraints) + 1
+    signal_register = AncillaRegister(
+        total_signal_qubits, name="sig")
+
+    return variable_registers, ancilla_register, signal_register
+
 
 class CircuitBuilder:
     variables: List[Variable]
@@ -25,89 +91,25 @@ class CircuitBuilder:
 
     def build(self) -> QuantumCircuit:
 
-        # If needed, add value constraint for each variable
-        for variable in self.variables:
-            if 2 ** variable.qubit_count > len(variable.allowed):
-                LessThan(variable, len(variable.allowed))
-
+        add_allowed_value_constraints(self.variables)
         constraints = extract_constraints(self.variables)
 
         # TODO: Sort constraints to minimize depth
 
-        variable_registers = [
-            QuantumRegister(variable.qubit_count, variable.name)
-            for variable in self.variables
-        ]
-
-        total_ancilla_qubits = sum(
-            [constraint.ancilla_count for constraint in constraints])
-        ancilla_register = AncillaRegister(
-            total_ancilla_qubits, name="anc")
-
-        total_signal_qubits = len(constraints) + 1
-        signal_register = AncillaRegister(
-            total_signal_qubits, name="sig")
+        variable_registers, ancilla_register, signal_register = init_registers(
+            self.variables, constraints
+        )
 
         circuit = QuantumCircuit(
             *variable_registers, ancilla_register, signal_register)
 
-        # Add constraints to circuit.
-        used_ancillas = 0
-        used_signal_qubits = 0
-        for constraint in constraints:
+        add_constraints_to_circuit(circuit, variable_registers, ancilla_register, signal_register,
+                                   self.variables, constraints)
 
-            variable_indices = [
-                self.variables.index(variable) for variable in constraint.variables
-            ]
-
-            rel_variable_registers = [
-                variable_registers[variable_index]
-                for variable_index in variable_indices
-            ]
-
-            constraint.build(
-                circuit,
-                variable_registers=rel_variable_registers,
-                ancilla_register=ancilla_register,
-                used_ancillas=used_ancillas,
-                signal_register=signal_register,
-                used_signal_qubits=used_signal_qubits
-            )
-
-            used_ancillas += constraint.ancilla_count
-            used_signal_qubits += 1
-
-        circuit.x(signal_register[-1])
-        circuit.h(signal_register[-1])
-
-        # Merge constraint results to final singal qubit
-        circuit.mcx(
-            control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
+        merge_constraint_results(circuit, signal_register)
 
         # Uncompute circuit
-        used_ancillas = 0
-        used_signal_qubits = 0
-        for constraint in constraints:
-
-            variable_indices = [
-                self.variables.index(variable) for variable in constraint.variables
-            ]
-
-            rel_variable_registers = [
-                variable_registers[variable_index]
-                for variable_index in variable_indices
-            ]
-
-            constraint.build(
-                circuit,
-                variable_registers=rel_variable_registers,
-                ancilla_register=ancilla_register,
-                used_ancillas=used_ancillas,
-                signal_register=signal_register,
-                used_signal_qubits=used_signal_qubits
-            )
-
-            used_ancillas += constraint.ancilla_count
-            used_signal_qubits += 1
+        add_constraints_to_circuit(circuit, variable_registers, ancilla_register, signal_register,
+                                   self.variables, constraints)
 
         return circuit
