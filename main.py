@@ -1,4 +1,4 @@
-from gospl.constraint import SameAs, Not
+from gospl.constraint import SameAs, Not, LessThan
 from gospl.variable import Variable
 from gospl.builder import CircuitBuilder
 
