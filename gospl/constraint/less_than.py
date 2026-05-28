@@ -1,0 +1,40 @@
+from qiskit import QuantumCircuit
+from qiskit.circuit import QuantumRegister, AncillaRegister
+from typing import List
+
+from .interface import Constraint
+from gospl.variable import Variable
+
+
+class LessThan(Constraint):
+    variables: List[Variable]
+    value: int
+
+    def __init__(self, variable: Variable, value: int):
+        variable.constraints.append(self)
+        self.variables = [variable]
+        self.value = value
+
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
+        assert len(
+            variable_registers) == 1, f"LessThan constraint requires qubit ids for exactly 1 variable. {len(variable_registers)} were given."
+
+        variable_register = variable_registers[0]
+
+        circuit.x(variable_register)
+
+        bit_string = bin(self.value)[2:].zfill(len(variable_register))
+        
+        for bit_i, bit_value in enumerate(bit_string):
+            if bit_value == "1":
+                control_qubits = variable_register[: bit_i + 1]
+                circuit.mcx(
+                    control_qubits=control_qubits, target_qubit=signal_register[used_signal_qubits])
+
+        circuit.x(variable_register)
+
+        return circuit
+
+    @property
+    def ancilla_count(self) -> int:
+        return 0
