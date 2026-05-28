@@ -3,7 +3,7 @@ from qiskit.circuit import QuantumRegister, AncillaRegister
 from typing import List, Dict
 
 from .variable import Variable
-from .constraint import Constraint
+from .constraint import Constraint, LessThan
 
 
 def extract_constraints(variables: List[Variable]) -> List[Constraint]:
@@ -20,6 +20,13 @@ def extract_constraints(variables: List[Variable]) -> List[Constraint]:
     return constraints
 
 
+def add_variable_value_constraints(variables: List[Variable]) -> None:
+    for variable in variables:
+
+        if 2 ** variable.qubit_count > len(variable.allowed):
+            LessThan(variable, len(variable.allowed))
+
+
 class CircuitBuilder:
     variables: List[Variable]
 
@@ -29,6 +36,7 @@ class CircuitBuilder:
     def build(self) -> QuantumCircuit:
 
         # If needed, add value constraint for each variable
+        add_variable_value_constraints(self.variables)
 
         # Extract constraints from variables
         constraints = extract_constraints(self.variables)
@@ -81,8 +89,9 @@ class CircuitBuilder:
         circuit.x(signal_register[-1])
         circuit.h(signal_register[-1])
 
-        circuit.mcx(control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
-            
+        circuit.mcx(
+            control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
+
         # uncompute circuit
 
         return circuit
