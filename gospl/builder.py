@@ -80,8 +80,9 @@ class CircuitBuilder:
 
         circuit.x(signal_register[-1])
         circuit.h(signal_register[-1])
-        circuit.mcx(control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
 
+        circuit.mcx(control_qubits=signal_register[:-1], target_qubit=signal_register[-1])
+            
         # uncompute circuit
 
         return circuit

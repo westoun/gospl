@@ -11,8 +11,7 @@ class LessThan(Constraint):
     value: int
 
     def __init__(self, variable: Variable, value: int):
-        variable.constraints.append(self)
-        self.variables = [variable]
+        super().__init__([variable])
         self.value = value
 
     def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
@@ -24,7 +23,7 @@ class LessThan(Constraint):
         circuit.x(variable_register)
 
         bit_string = bin(self.value)[2:].zfill(len(variable_register))
-        
+       
         for bit_i, bit_value in enumerate(bit_string):
             if bit_value == "1":
                 control_qubits = variable_register[: bit_i + 1]
