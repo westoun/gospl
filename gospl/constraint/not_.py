@@ -15,8 +15,8 @@ class Not(Constraint):
 
             # Remove existing linking to avoid confusion during
             # circuit building.
-            if constraint in constraint.variables:
-                constraint.variables.remove(constraint)
+            if constraint in variable.constraints:
+                variable.constraints.remove(constraint)
 
             variable.constraints.append(self)
 
