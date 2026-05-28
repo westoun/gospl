@@ -22,6 +22,8 @@ if __name__ == "__main__":
     circuit = builder.build()
 
     print(circuit)
+    print("Circuit depth: ", circuit.depth())
+    print("Qubit count: ", circuit.width())
 
     qasm_circuit = dumps(circuit)
     with open("oracle.qasm", "w") as target_file:
