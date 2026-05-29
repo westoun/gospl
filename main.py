@@ -6,24 +6,39 @@ from qiskit.qasm3 import dumps
 
 if __name__ == "__main__":
 
-    colors = ["red", "blue", "green"]
+    colors = ["red", "green", "blue"]
 
-    node1 = Variable("node_1", colors)
-    node2 = Variable("node_2", colors)
-    node3 = Variable("node_3", colors)
-    node4 = Variable("node_4", colors)
+    wa = Variable("Western Australia", colors)
+    nt = Variable("Northern Territory", colors)
+    sa = Variable("South Australia", colors)
+    q = Variable("Queensland", colors)
+    nsw = Variable("New South Wales", colors)
+    v = Variable("Victoria", colors)
+    t = Variable("Tasmania", colors)
 
-    Not(SameAs(node1, node2))
-    Not(SameAs(node2, node3))
-    Not(SameAs(node2, node4))
-    Not(SameAs(node3, node4))
+    Not(SameAs(wa, nt))
+    Not(SameAs(wa, sa))
+    Not(SameAs(nt, q))
+    Not(SameAs(nt, sa))
+    Not(SameAs(sa, q))
+    Not(SameAs(sa, nsw))
+    Not(SameAs(q, nsw))
+    Not(SameAs(sa, v))
+    Not(SameAs(nsw, v))
 
-    builder = CircuitBuilder([node1, node2, node3, node4])
+    builder = CircuitBuilder([wa, nt, sa, q, nsw, v, t])
     circuit = builder.build()
 
     print(circuit)
     print("Circuit depth: ", circuit.depth())
     print("Qubit count: ", circuit.width())
+
+    gate_count = 0
+    for gate, count in circuit.count_ops().items():
+        gate_count += count 
+
+    print("Gate count: ", gate_count)
+
 
     qasm_circuit = dumps(circuit)
     with open("oracle.qasm", "w") as target_file:
