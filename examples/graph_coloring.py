@@ -1,19 +1,13 @@
-import math
 import os
-
+from qiskit_aer import AerSimulator
+from qiskit.compiler import transpile
 import sys
 sys.path.append(os.path.abspath('..'))  # nopep8
-
-from matplotlib import pyplot as plt
-from typing import List
 
 from gospl.constraint import SameAs, Not, LessThan, Equals
 from gospl.variable import Variable
 from gospl.builder import CircuitBuilder
-from qiskit.compiler import transpile
 
-from qiskit_aer import AerSimulator
-from qiskit.visualization import plot_histogram
 
 if __name__ == "__main__":
 
@@ -34,7 +28,7 @@ if __name__ == "__main__":
     builder.add_h_layer(circuit)
     builder.add_oracle(circuit)
     builder.add_diffusion(circuit)
-    
+
     builder.add_measurement(circuit)
 
     print("Circuit depth: ", circuit.depth())
@@ -60,7 +54,7 @@ if __name__ == "__main__":
     for solution, count in counts.items():
 
         if count < 0.01 * shots:
-            continue 
+            continue
 
         solutions = []
 
