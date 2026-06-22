@@ -27,9 +27,8 @@ if __name__ == "__main__":
     Not(SameAs(nsw, v))
 
     builder = CircuitBuilder([wa, nt, sa, q, nsw, v, t])
-    variable_registers, ancilla_register, signal_register = builder.initialize_registers()
-    circuit = builder.create_circuit(
-        variable_registers, ancilla_register, signal_register)
+
+    circuit = builder.create_circuit()
 
     builder.add_oracle(circuit)
 
