@@ -3,14 +3,16 @@ import os
 import sys
 sys.path.append(os.path.abspath('..'))  # nopep8
 
+from matplotlib import pyplot as plt
+from typing import List
+
 from gospl.constraint import SameAs, Not, LessThan, Equals
 from gospl.variable import Variable
 from gospl.builder import CircuitBuilder
+from qiskit.compiler import transpile
 
 from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram
-from qiskit import transpile
-from qiskit.circuit.library import HGate
 
 if __name__ == "__main__":
 
@@ -26,34 +28,36 @@ if __name__ == "__main__":
 
     builder = CircuitBuilder([node1, node2, node3])
 
-    variable_registers, ancilla_register, signal_register = builder.initialize_registers()
-    circuit = builder.create_circuit(variable_registers, ancilla_register, signal_register)
+    circuit = builder.create_circuit()
 
-    for variable_register in variable_registers:
-        circuit.h(variable_register)
-
+    builder.add_h_layer(circuit)
     builder.add_oracle(circuit)
+    builder.add_diffusion(circuit)
+    builder.add_measurement(circuit)
 
     print("Circuit depth: ", circuit.depth())
     print("Qubit count: ", circuit.width())
 
     gate_count = 0
     for gate, count in circuit.count_ops().items():
-        gate_count += count 
+        gate_count += count
 
     print("Gate count: ", gate_count)
 
-    circuit.draw(output='mpl', filename='circuit.png', vertical_compression=None)
+    circuit.draw(output='mpl', filename='circuit.png',
+                 vertical_compression=None)
 
-    circuit.save_statevector()
-    simulator = AerSimulator(method='statevector')
+    simulator = AerSimulator()
 
-    job = simulator.run(circuit)
+    shots = 10_000
+    job = simulator.run(transpile(circuit, simulator), shots=shots)
     result = job.result()
-    statevector = result.get_statevector(circuit)
 
-    # 4. Print the resulting amplitudes
-    for i, entry in enumerate(statevector.data):
-        # print(entry)
-        if abs(entry) > 0.01 and entry.real < 0:
-            print(i) 
+    counts = result.get_counts(circuit)
+
+    for solution, count in counts.items():
+        if count > 0.01 * shots:
+            print(f"{solution}: {count}")
+
+    # plot_histogram(counts)
+    # plt.show()
