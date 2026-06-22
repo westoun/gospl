@@ -1,5 +1,5 @@
 from qiskit import QuantumCircuit
-from qiskit.circuit import QuantumRegister, AncillaRegister
+from qiskit.circuit import QuantumRegister, AncillaRegister, ClassicalRegister
 from typing import List, Dict, Tuple
 
 from .variable import Variable
@@ -65,54 +65,80 @@ def merge_constraint_results(circuit: QuantumCircuit, signal_register: QuantumRe
     circuit.barrier()
 
 
-def init_registers(variables: List[Variable], constraints: List[Constraint]) -> Tuple[List[QuantumRegister], QuantumRegister, QuantumRegister]:
-    variable_registers = [
-        QuantumRegister(variable.qubit_count, variable.name)
-        for variable in variables
-    ]
-
-    total_ancilla_qubits = sum(
-        [constraint.ancilla_count for constraint in constraints])
-    ancilla_register = AncillaRegister(
-        total_ancilla_qubits, name="anc")
-
-    total_signal_qubits = len(constraints) + 1
-    signal_register = AncillaRegister(
-        total_signal_qubits, name="sig")
-
-    return variable_registers, ancilla_register, signal_register
-
-
 class CircuitBuilder:
     variables: List[Variable]
+    variable_registers: List[QuantumRegister]
+    ancilla_register: QuantumRegister
+    signal_register: QuantumRegister
+    classical_registers: List[ClassicalRegister]
 
     def __init__(self, variables: List[Variable]):
         self.variables = variables
         add_allowed_value_constraints(self.variables)
 
-    def initialize_registers(self) -> Tuple[List[QuantumRegister], QuantumRegister, QuantumRegister]:
+    def create_circuit(self) -> QuantumCircuit:
         constraints = extract_constraints(self.variables)
-        variable_registers, ancilla_register, signal_register = init_registers(
-            self.variables, constraints
-        )
-        return variable_registers, ancilla_register, signal_register
 
-    def create_circuit(self, variable_registers: List[QuantumRegister], ancilla_register: QuantumRegister, signal_register: QuantumRegister) -> QuantumCircuit:
+        self.variable_registers = [
+            QuantumRegister(variable.qubit_count, variable.name)
+            for variable in self.variables
+        ]
+
+        total_ancilla_qubits = max(
+            [constraint.ancilla_count for constraint in constraints])
+        self.ancilla_register = AncillaRegister(
+            total_ancilla_qubits, name="anc")
+
+        total_signal_qubits = len(constraints) + 1
+        self.signal_register = AncillaRegister(
+            total_signal_qubits, name="sig")
+
+        self.classical_registers = [
+            ClassicalRegister(variable.qubit_count, variable.name + "Cl")
+            for variable in self.variables
+        ]
+
         return QuantumCircuit(
-            *variable_registers, ancilla_register, signal_register)
+            *self.variable_registers, self.ancilla_register, self.signal_register, *self.classical_registers)
+
+    def add_h_layer(self, circuit: QuantumCircuit) -> None:
+        for variable_register in self.variable_registers:
+            circuit.h(variable_register)
+        circuit.barrier()
 
     def add_oracle(self, circuit: QuantumCircuit) -> None:
-        variable_registers = circuit.qregs[:len(self.variables)]
-        ancilla_register = circuit.qregs[len(self.variables)]
-        signal_register = circuit.qregs[len(self.variables) + 1]
-
         # TODO: Sort constraints to minimize depth
         constraints = extract_constraints(self.variables)
-        add_constraints_to_circuit(circuit, variable_registers, ancilla_register, signal_register,
+        add_constraints_to_circuit(circuit, self.variable_registers, self.ancilla_register, self.signal_register,
                                    self.variables, constraints)
 
-        merge_constraint_results(circuit, signal_register)
+        merge_constraint_results(circuit, self.signal_register)
 
         # Uncompute circuit
-        add_constraints_to_circuit(circuit, variable_registers, ancilla_register, signal_register,
+        add_constraints_to_circuit(circuit, self.variable_registers, self.ancilla_register, self.signal_register,
                                    self.variables, constraints)
+
+    def add_diffusion(self, circuit: QuantumCircuit) -> None:
+        for variable_register in self.variable_registers:
+            circuit.h(variable_register)
+            circuit.x(variable_register)
+
+        # Inspired by https://qiskit.qotlabs.org/learning/courses/utility-scale-quantum-computing/grovers-algorithm#3-diffusion-operator
+
+        qubit_count = sum(
+            [register.size for register in self.variable_registers])
+
+        circuit.h(qubit_count - 1)
+        circuit.mcx([i for i in range(0, qubit_count - 1)], qubit_count - 1)
+        circuit.h(qubit_count - 1)
+
+        for variable_register in self.variable_registers:
+            circuit.x(variable_register)
+            circuit.h(variable_register)
+
+        circuit.barrier()
+
+    def add_measurement(self, circuit: QuantumCircuit) -> None:
+
+        for variable_register, classical_register in zip(self.variable_registers, self.classical_registers):
+            circuit.measure(variable_register, classical_register)
