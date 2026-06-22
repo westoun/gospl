@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     print("Gate count: ", gate_count)
 
-    circuit.draw(output='mpl', filename='circuit.png',
+    circuit.draw(output='mpl', filename='graph_coloring_circuit.png',
                  vertical_compression=None)
 
     simulator = AerSimulator()
