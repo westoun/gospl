@@ -1,4 +1,5 @@
 *.qasm
+*.png
 
 tmp/
 .DS_Store
