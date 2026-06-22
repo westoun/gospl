@@ -88,21 +88,26 @@ class CircuitBuilder:
 
     def __init__(self, variables: List[Variable]):
         self.variables = variables
-
-    def build(self) -> QuantumCircuit:
-
         add_allowed_value_constraints(self.variables)
+
+    def initialize_registers(self) -> Tuple[List[QuantumRegister], QuantumRegister, QuantumRegister]:
         constraints = extract_constraints(self.variables)
-
-        # TODO: Sort constraints to minimize depth
-
         variable_registers, ancilla_register, signal_register = init_registers(
             self.variables, constraints
         )
+        return variable_registers, ancilla_register, signal_register
 
-        circuit = QuantumCircuit(
+    def create_circuit(self, variable_registers: List[QuantumRegister], ancilla_register: QuantumRegister, signal_register: QuantumRegister) -> QuantumCircuit:
+        return QuantumCircuit(
             *variable_registers, ancilla_register, signal_register)
 
+    def add_oracle(self, circuit: QuantumCircuit) -> None:
+        variable_registers = circuit.qregs[:len(self.variables)]
+        ancilla_register = circuit.qregs[len(self.variables)]
+        signal_register = circuit.qregs[len(self.variables) + 1]
+
+        # TODO: Sort constraints to minimize depth
+        constraints = extract_constraints(self.variables)
         add_constraints_to_circuit(circuit, variable_registers, ancilla_register, signal_register,
                                    self.variables, constraints)
 
@@ -111,5 +116,3 @@ class CircuitBuilder:
         # Uncompute circuit
         add_constraints_to_circuit(circuit, variable_registers, ancilla_register, signal_register,
                                    self.variables, constraints)
-
-        return circuit

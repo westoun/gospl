@@ -27,7 +27,11 @@ if __name__ == "__main__":
     Not(SameAs(nsw, v))
 
     builder = CircuitBuilder([wa, nt, sa, q, nsw, v, t])
-    circuit = builder.build()
+    variable_registers, ancilla_register, signal_register = builder.initialize_registers()
+    circuit = builder.create_circuit(
+        variable_registers, ancilla_register, signal_register)
+
+    builder.add_oracle(circuit)
 
     print(circuit)
     print("Circuit depth: ", circuit.depth())
@@ -35,10 +39,9 @@ if __name__ == "__main__":
 
     gate_count = 0
     for gate, count in circuit.count_ops().items():
-        gate_count += count 
+        gate_count += count
 
     print("Gate count: ", gate_count)
-
 
     qasm_circuit = dumps(circuit)
     with open("oracle.qasm", "w") as target_file:
