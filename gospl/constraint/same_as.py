@@ -16,11 +16,13 @@ class SameAs(Constraint):
         assert len(
             variable_registers) == 2, f"SameAs constraint requires qubit ids for 2 variables. {len(variable_registers)} were given."
 
+        circuit.x(variable_registers[1])
         circuit.cx(variable_registers[0], variable_registers[1])
 
         circuit.mcx(
             control_qubits=variable_registers[1], target_qubit=signal_register[used_signal_qubits])
 
+        circuit.x(variable_registers[1])
         circuit.cx(variable_registers[0], variable_registers[1])
         return circuit
 
