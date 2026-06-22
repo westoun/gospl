@@ -1,3 +1,4 @@
+import math
 import os
 
 import sys
@@ -33,6 +34,7 @@ if __name__ == "__main__":
     builder.add_h_layer(circuit)
     builder.add_oracle(circuit)
     builder.add_diffusion(circuit)
+    
     builder.add_measurement(circuit)
 
     print("Circuit depth: ", circuit.depth())
@@ -56,8 +58,23 @@ if __name__ == "__main__":
     counts = result.get_counts(circuit)
 
     for solution, count in counts.items():
-        if count > 0.01 * shots:
-            print(f"{solution}: {count}")
+
+        if count < 0.01 * shots:
+            continue 
+
+        solutions = []
+
+        for register_value in solution.split():
+            index = int(register_value, 2)
+
+            if index >= len(colors):
+                solutions.append("N/A")
+            else:
+                solutions.append(colors[index])
+
+        solution = " - ".join(solutions)
+
+        print(f"{solution}: {count} ({round(count / shots * 100, 2)}%)")
 
     # plot_histogram(counts)
     # plt.show()
