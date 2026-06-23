@@ -14,9 +14,9 @@ if __name__ == "__main__":
     colors = ["red", "green", "blue"]
 
     adjaceny_matrix = [
-        [0, 1, 1], 
-        [1, 0, 1],
-        [1, 1, 0]
+        [0, 1, 0],
+        [1, 0, 0],
+        [0, 0, 0]
     ]
 
     nodes = []
@@ -29,7 +29,9 @@ if __name__ == "__main__":
         # Avoid self references or double counting of relationships 
         # due to undirectedness of edges.
         for j in range(i + 1, len(adjaceny_matrix)):  
-            Not(SameAs(nodes[i], nodes[j]))
+
+            if adjaceny_matrix[i][j] == 1:
+                Not(SameAs(nodes[i], nodes[j]))
 
     builder = CircuitBuilder(nodes)
 
@@ -75,6 +77,8 @@ if __name__ == "__main__":
                 solutions.append("N/A")
             else:
                 solutions.append(colors[index])
+
+        solutions = reversed(solutions)
 
         solution = " - ".join(solutions)
 
