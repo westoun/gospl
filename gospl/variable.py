@@ -13,9 +13,7 @@ class Variable:
                 raise ValueError(
                     f"Type '{type(value)}' not supported by variable class at the moment.")
 
-        # Sort to avoid semantic errors due to different
-        # orderings of allowed values between variables.
-        self.allowed = sorted(allowed)
+        self.allowed = allowed
 
         self.name = name
         self.constraints = []
