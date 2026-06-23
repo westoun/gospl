@@ -65,6 +65,8 @@ if __name__ == "__main__":
 
     for solution, count in counts.items():
 
+        solution = solution[::-1]
+
         if count < 0.01 * shots:
             continue
 
@@ -77,8 +79,6 @@ if __name__ == "__main__":
                 solutions.append("N/A")
             else:
                 solutions.append(colors[index])
-
-        solutions = reversed(solutions)
 
         solution = " - ".join(solutions)
 
