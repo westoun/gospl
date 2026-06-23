@@ -13,15 +13,25 @@ if __name__ == "__main__":
 
     colors = ["red", "green", "blue"]
 
-    node1 = Variable("Node1", colors)
-    node2 = Variable("Node2", colors)
-    node3 = Variable("Node3", colors)
+    adjaceny_matrix = [
+        [0, 1, 1], 
+        [1, 0, 1],
+        [1, 1, 0]
+    ]
 
-    Not(SameAs(node1, node2))
-    Not(SameAs(node1, node3))
-    Not(SameAs(node2, node3))
+    nodes = []
+    for i in range(len(adjaceny_matrix)):
+        node = Variable(f"Node{i+1}", colors)
+        nodes.append(node)
 
-    builder = CircuitBuilder([node1, node2, node3])
+    for i in range(len(adjaceny_matrix)):
+        
+        # Avoid self references or double counting of relationships 
+        # due to undirectedness of edges.
+        for j in range(i + 1, len(adjaceny_matrix)):  
+            Not(SameAs(nodes[i], nodes[j]))
+
+    builder = CircuitBuilder(nodes)
 
     circuit = builder.create_circuit()
 
@@ -69,6 +79,3 @@ if __name__ == "__main__":
         solution = " - ".join(solutions)
 
         print(f"{solution}: {count} ({round(count / shots * 100, 2)}%)")
-
-    # plot_histogram(counts)
-    # plt.show()
