@@ -29,3 +29,6 @@ class SameAs(Constraint):
     @property
     def ancilla_count(self) -> int:
         return 0
+    
+    def __repr__(self):
+        return f"{self.variables[0].name} == {self.variables[1].name}"

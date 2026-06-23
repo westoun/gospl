@@ -17,3 +17,6 @@ class Constraint:
 
     def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
         raise NotImplementedError()
+
+    def __repr__(self):
+        raise NotImplementedError()

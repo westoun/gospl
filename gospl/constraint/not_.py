@@ -33,3 +33,6 @@ class Not(Constraint):
     @property
     def ancilla_count(self) -> int:
         return self.constraint.ancilla_count
+
+    def __repr__(self):
+        return f"not {self.constraint}"

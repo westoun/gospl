@@ -45,3 +45,6 @@ class Equals(Constraint):
     @property
     def ancilla_count(self) -> int:
         return 0
+
+    def __repr__(self):
+        return f"{self.variables[0].name} == {self.value}"
