@@ -38,8 +38,9 @@ def find_variable(variables: List[Variable], row_i: int, col_i: int) -> Variable
 
     raise ValueError(f"No variable found for target name '{target_name}'")
 
+
 def print_filled_sudoku(sudoku: List[List], cell_values: List[int]) -> None:
-    
+
     used_cells = 0
 
     for i, row in enumerate(sudoku):
@@ -50,7 +51,7 @@ def print_filled_sudoku(sudoku: List[List], cell_values: List[int]) -> None:
         values = []
         for value in row:
             if value is None:
-                values.append(cell_values[used_cells])
+                values.append(f"\033[96m{cell_values[used_cells]}\033[0m")
                 used_cells += 1
             else:
                 values.append(value)
@@ -60,11 +61,16 @@ def print_filled_sudoku(sudoku: List[List], cell_values: List[int]) -> None:
     print("# # # # # # #")
 
 
-
 if __name__ == "__main__":
 
+    # sudoku = [
+    #     [1, 2, None, 4],
+    #     [4, 3, None, 1],
+    #     [3, None, 1, 2],
+    #     [2, 1, 4, 3]
+    # ]
     sudoku = [
-        [1, 3, 4, None], 
+        [1, 3, 4, None],
         [4, 2, None, 3],
         [2, 1, 3, 4],
         [3, 4, None, 1]
@@ -123,16 +129,16 @@ if __name__ == "__main__":
         print("start row:", start_row)
         print("start col:", start_col)
         for row_i in range(start_row, start_row + block_width):
-            
+
             # Already covered by same row constraint
             if row_i == row:
-                continue 
+                continue
 
             for col_i in range(start_col, start_col + block_width):
 
                 # Already covered by same col constraint
                 if col_i == col:
-                    continue 
+                    continue
 
                 if sudoku[row_i][col_i] is not None:
                     print(f"{variable.name} != {sudoku[row_i][col_i]}")
@@ -171,10 +177,11 @@ if __name__ == "__main__":
     result = job.result()
 
     counts = result.get_counts(circuit)
-    print(counts)
-    print(dict(counts)["01 00 01"])
 
     for solution, count in counts.items():
+
+        # Reverse measurement bit order as qiskit seems to index bottom up.
+        solution = solution[::-1] 
 
         if count < 0.05 * shots:
             continue
