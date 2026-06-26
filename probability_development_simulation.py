@@ -4,14 +4,15 @@ from qiskit_aer import StatevectorSimulator
 
 if __name__ == "__main__":
 
-    qubit_count = 3
+    qubit_count = 5
     constraint_count = 5
     marked_states_per_constraint = {
         5: 2,
-        4: 1
+        4: 1,
         # 2: 3
+        1: 4
     }
-    max_n = 3
+    max_n = 5
 
     circuit = QuantumCircuit(qubit_count + 2)
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
                         circuit.x(bit_i)
 
                 state_i += 1
-        
+
         circuit.barrier()
 
     def apply_diffusor():
@@ -93,17 +94,15 @@ if __name__ == "__main__":
     data = result.data()
 
     for i in range(max_n):
+
+        print(f"\nProbabilities after the {i+1}. grover iteration:")
+
         state_vector = data[f"state_{i}"]
 
-        # Reversing the order of qubits is needed to align with original 
+        # Reversing the order of qubits is needed to align with original
         # top-down encoding
-        probabilities = state_vector.probabilities(qargs=list(reversed(list(range(qubit_count)))))
-
-        # for state_i, probability in enumerate(probabilities):
-
-        #     state_i = int(state_i)
-
-        #     print(f"{state_i}: {probabilities[state_i]}")
+        probabilities = state_vector.probabilities(
+            qargs=list(reversed(list(range(qubit_count)))))
 
         state_i = 0
         for satisfaction_count in sorted(marked_states_per_constraint, reverse=True):
@@ -112,24 +111,9 @@ if __name__ == "__main__":
 
             for _ in range(marked_states_per_constraint[satisfaction_count]):
 
-                probabilities_per_satisfaction_count.append(float(probabilities[state_i]))
+                probabilities_per_satisfaction_count.append(
+                    float(probabilities[state_i]))
                 state_i += 1
 
-            print(f"Probabilities of states that satisfy {satisfaction_count} of {constraint_count} constraints: {probabilities_per_satisfaction_count}")
-
-        # get probabilities of all 
-
-
-        
-
-        # print(probabilities)
-
-        # get probability distribution
-
-        # get results for each of the marked states
-
-        # add to data collection
-
-    # plot results
-
-    pass
+            print(
+                f"\t States that satisfy {satisfaction_count} of {constraint_count} constraints: {probabilities_per_satisfaction_count}")
