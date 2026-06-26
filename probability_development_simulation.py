@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+import math 
 import numpy as np
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import StatevectorSimulator
@@ -8,11 +10,11 @@ if __name__ == "__main__":
     constraint_count = 5
     marked_states_per_constraint = {
         5: 2,
-        4: 1,
+        # 4: 4,
         # 2: 3
-        1: 4
+        1: 10
     }
-    max_n = 5
+    max_n = math.ceil(math.sqrt(2**qubit_count))
 
     circuit = QuantumCircuit(qubit_count + 2)
 
@@ -72,7 +74,8 @@ if __name__ == "__main__":
 
         circuit.barrier()
 
-    # apply hadamard to each qubit
+    # RUN CIRCUIT
+    
     for i in range(qubit_count):
         circuit.h(i)
 
@@ -87,11 +90,14 @@ if __name__ == "__main__":
 
         circuit.save_statevector(f"state_{i}")
 
-    # print(circuit)
-
     simulator = StatevectorSimulator()
     result = simulator.run(transpile(circuit, simulator)).result()
     data = result.data()
+
+    # EXTRACT PROBABILITIES AFTER EACH ITERATION
+    probabilities_per_label = {}
+    for satisfaction_count in sorted(marked_states_per_constraint, reverse=True):
+        probabilities_per_label[satisfaction_count] = []
 
     for i in range(max_n):
 
@@ -117,3 +123,24 @@ if __name__ == "__main__":
 
             print(
                 f"\t States that satisfy {satisfaction_count} of {constraint_count} constraints: {probabilities_per_satisfaction_count}")
+
+            probabilities_per_label[satisfaction_count].append(
+                probabilities_per_satisfaction_count[0])
+
+    # VISUALIZE RESULTS
+    ax = plt.subplot()
+    for satisfaction_count in probabilities_per_label:
+        ax.plot(range(max_n), probabilities_per_label[satisfaction_count],
+                label=f"{satisfaction_count} / {constraint_count} constraints")
+
+    ax.set_ylim((0, 1))
+
+    ax.set_xlabel("iteration")
+
+    ax.set_ylabel("probability")
+
+    plt.grid()
+    plt.legend()
+
+    plt.show()
+    plt.clf()
