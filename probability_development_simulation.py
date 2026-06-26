@@ -6,13 +6,13 @@ from qiskit_aer import StatevectorSimulator
 
 if __name__ == "__main__":
 
-    qubit_count = 5
-    constraint_count = 5
+    qubit_count = 7
+    constraint_count = 10
     marked_states_per_constraint = {
-        5: 2,
-        # 4: 4,
-        # 2: 3
-        1: 10
+        10: 1,
+        9: 5,
+        # # 2: 3
+        1: 30
     }
     max_n = math.ceil(math.sqrt(2**qubit_count))
 
@@ -101,8 +101,6 @@ if __name__ == "__main__":
 
     for i in range(max_n):
 
-        print(f"\nProbabilities after the {i+1}. grover iteration:")
-
         state_vector = data[f"state_{i}"]
 
         # Reversing the order of qubits is needed to align with original
@@ -121,17 +119,30 @@ if __name__ == "__main__":
                     float(probabilities[state_i]))
                 state_i += 1
 
-            print(
-                f"\t States that satisfy {satisfaction_count} of {constraint_count} constraints: {probabilities_per_satisfaction_count}")
-
             probabilities_per_label[satisfaction_count].append(
                 probabilities_per_satisfaction_count[0])
+
+    correlations = []
+    for i in range(max_n):
+        
+        satisfaction_counts = []
+        probabilities = []
+
+        for satisfaction_count in probabilities_per_label:
+            satisfaction_counts.append(satisfaction_count)
+            probabilities.append(probabilities_per_label[satisfaction_count][i])
+
+        correlation = np.corrcoef(satisfaction_counts, probabilities)[0, 1]
+        correlations.append(correlation)
+
 
     # VISUALIZE RESULTS
     ax = plt.subplot()
     for satisfaction_count in probabilities_per_label:
         ax.plot(range(max_n), probabilities_per_label[satisfaction_count],
                 label=f"{satisfaction_count} / {constraint_count} constraints")
+
+    ax.plot(range(max_n), correlations, label="correlation between sat. and prob.", color="grey", linestyle="dashed")
 
     ax.set_ylim((0, 1))
 
