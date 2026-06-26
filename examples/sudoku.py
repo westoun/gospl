@@ -8,7 +8,8 @@ from typing import List
 
 from gospl.constraint import SameAs, Not, LessThan, Equals
 from gospl.variable import Variable
-from gospl.builder import CircuitBuilder
+from gospl.builder import SubPhaseCircuitBuilder as CircuitBuilder
+# from gospl.builder import CircuitBuilder
 
 
 def print_sudoku(sudoku: List[List]):
@@ -170,18 +171,18 @@ if __name__ == "__main__":
 
     simulator = AerSimulator()
 
-    shots = 10_000
+    shots = 50_000
     job = simulator.run(transpile(circuit, simulator), shots=shots)
     result = job.result()
 
     counts = result.get_counts(circuit)
 
-    for solution, count in counts.items():
+    for solution, count in sorted(counts.items(), key=lambda item: -item[1])[:5]:
 
         # Reverse measurement bit order as qiskit seems to index bottom up.
         solution = solution[::-1] 
 
-        if count < 0.01 * shots:
+        if count < 0.005 * shots:
             continue
 
         solutions = []
