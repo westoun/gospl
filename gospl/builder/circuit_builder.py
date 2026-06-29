@@ -16,7 +16,6 @@ def add_constraints_to_circuit(
     signal_register: QuantumRegister,
     variables: List[Variable], constraints: List[Constraint]
 ) -> None:
-    used_ancillas = 0
     used_signal_qubits = 0
     for constraint in constraints:
 
@@ -33,13 +32,11 @@ def add_constraints_to_circuit(
             circuit,
             variable_registers=rel_variable_registers,
             ancilla_register=ancilla_register,
-            used_ancillas=used_ancillas,
             signal_register=signal_register,
-            used_signal_qubits=used_signal_qubits
+            signal_qubit=used_signal_qubits
         )
         circuit.barrier()
 
-        used_ancillas += constraint.ancilla_count
         used_signal_qubits += 1
 
 

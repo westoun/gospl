@@ -17,7 +17,7 @@ class Constraint(ABC):
             variable.constraints.append(self)
 
     @abstractmethod
-    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> None:
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, signal_register: AncillaRegister, signal_qubit: int) -> None:
         ...
 
     @abstractmethod

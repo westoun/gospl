@@ -14,7 +14,7 @@ class LessThan(Constraint):
         super().__init__([variable])
         self.value = value
 
-    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> None:
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, signal_register: AncillaRegister, signal_qubit: int) -> None:
         assert len(
             variable_registers) == 1, f"LessThan constraint requires qubit ids for exactly 1 variable. {len(variable_registers)} were given."
 
@@ -28,7 +28,7 @@ class LessThan(Constraint):
             if bit_value == "1":
                 control_qubits = variable_register[: bit_i + 1]
                 circuit.mcx(
-                    control_qubits=control_qubits, target_qubit=signal_register[used_signal_qubits])
+                    control_qubits=control_qubits, target_qubit=signal_register[signal_qubit])
                 circuit.x(variable_register[bit_i])
 
         for bit_i, bit_value in enumerate(bit_string):

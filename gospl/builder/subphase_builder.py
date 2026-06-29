@@ -18,7 +18,6 @@ def add_constraints_to_circuit(
     variables: List[Variable], constraints: List[Constraint]
 ) -> None:
 
-    used_ancillas = 0
     for constraint in constraints:
 
         variable_indices = [
@@ -34,9 +33,8 @@ def add_constraints_to_circuit(
             circuit,
             variable_registers=rel_variable_registers,
             ancilla_register=ancilla_register,
-            used_ancillas=used_ancillas,
             signal_register=signal_register,
-            used_signal_qubits=0
+            signal_qubit=0
         )
 
         circuit.cp(
@@ -50,14 +48,11 @@ def add_constraints_to_circuit(
             circuit,
             variable_registers=rel_variable_registers,
             ancilla_register=ancilla_register,
-            used_ancillas=used_ancillas,
             signal_register=signal_register,
-            used_signal_qubits=0
+            signal_qubit=0
         )
 
         circuit.barrier()
-
-        used_ancillas += constraint.ancilla_count
 
 
 def prepare_kickback_qubit(circuit: QuantumCircuit,
