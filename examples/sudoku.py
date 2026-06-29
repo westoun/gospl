@@ -2,6 +2,7 @@ import math
 import os
 from qiskit_aer import AerSimulator
 from qiskit.compiler import transpile
+from qiskit.transpiler.passes import RemoveBarriers
 import sys
 sys.path.append(os.path.abspath('..'))  # nopep8
 from typing import List
@@ -143,9 +144,9 @@ if __name__ == "__main__":
 
         for value in constraint_values:
             if type(value) == Variable:
-                Not(SameAs(variable, value)) 
+                Not(SameAs(variable, value))
             else:
-                Not(Equals(variable, value)) 
+                Not(Equals(variable, value))
 
     builder = CircuitBuilder(variables)
 
@@ -157,6 +158,11 @@ if __name__ == "__main__":
 
     builder.add_measurement(circuit)
 
+    circuit.draw(output='mpl', filename='sudoku_circuit.png',
+                 vertical_compression=None)
+
+    circuit = RemoveBarriers()(circuit)
+
     print("Circuit depth: ", circuit.depth())
     print("Qubit count: ", circuit.width())
 
@@ -166,12 +172,10 @@ if __name__ == "__main__":
 
     print("Gate count: ", gate_count)
 
-    circuit.draw(output='mpl', filename='sudoku_circuit.png',
-                 vertical_compression=None)
-
     simulator = AerSimulator()
 
     shots = 50_000
+
     job = simulator.run(transpile(circuit, simulator), shots=shots)
     result = job.result()
 
@@ -180,7 +184,7 @@ if __name__ == "__main__":
     for solution, count in sorted(counts.items(), key=lambda item: -item[1])[:5]:
 
         # Reverse measurement bit order as qiskit seems to index bottom up.
-        solution = solution[::-1] 
+        solution = solution[::-1]
 
         if count < 0.005 * shots:
             continue

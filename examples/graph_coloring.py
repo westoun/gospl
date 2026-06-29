@@ -1,6 +1,7 @@
 import os
 from qiskit_aer import AerSimulator
 from qiskit.compiler import transpile
+from qiskit.transpiler.passes import RemoveBarriers
 import sys
 sys.path.append(os.path.abspath('..'))  # nopep8
 
@@ -43,6 +44,11 @@ if __name__ == "__main__":
 
     builder.add_measurement(circuit)
 
+    circuit.draw(output='mpl', filename='graph_coloring_circuit.png',
+                 vertical_compression=None)
+    
+    circuit = RemoveBarriers()(circuit)
+
     print("Circuit depth: ", circuit.depth())
     print("Qubit count: ", circuit.width())
 
@@ -51,9 +57,6 @@ if __name__ == "__main__":
         gate_count += count
 
     print("Gate count: ", gate_count)
-
-    circuit.draw(output='mpl', filename='graph_coloring_circuit.png',
-                 vertical_compression=None)
 
     simulator = AerSimulator()
 
