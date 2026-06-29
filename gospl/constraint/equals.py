@@ -2,7 +2,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, AncillaRegister
 from typing import List, Any
 
-from .interface import Constraint
+from .constraint_base import Constraint
 from gospl.variable import Variable
 
 
@@ -14,7 +14,7 @@ class Equals(Constraint):
         super().__init__([var])
         self.value = value
 
-    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> None:
         assert len(
             variable_registers) == 1, f"Is constraint requires qubit ids for 1 variable. {len(variable_registers)} were given."
 

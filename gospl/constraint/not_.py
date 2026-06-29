@@ -2,7 +2,7 @@ from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, AncillaRegister
 from typing import List
 
-from .interface import Constraint
+from .constraint_base import Constraint
 from gospl.variable import Variable
 
 
@@ -23,12 +23,11 @@ class Not(Constraint):
         self.variables = constraint.variables
         self.constraint = constraint
 
-    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> QuantumCircuit:
+    def build(self, circuit: QuantumCircuit, variable_registers: List[QuantumRegister], ancilla_register: AncillaRegister, used_ancillas: int, signal_register: AncillaRegister, used_signal_qubits: int) -> None:
         circuit.x(signal_register[used_signal_qubits])
-        circuit = self.constraint.build(
+        self.constraint.build(
             circuit, variable_registers, ancilla_register, used_ancillas, signal_register, used_signal_qubits
         )
-        return circuit
 
     @property
     def ancilla_count(self) -> int:
