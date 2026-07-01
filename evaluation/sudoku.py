@@ -277,7 +277,7 @@ def count_constraint_violations(sudoku: List[List], variables: List[Variable], c
 )
 def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit: bool, seed: int, tag: str):
     shots = 100_000
-    shot_threshold = 0.001 * shots
+    shot_threshold = int(0.001 * shots)
 
     experiment_prefix = f"sudoku_{get_timestamp()}"
 
