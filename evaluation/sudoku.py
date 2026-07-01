@@ -281,7 +281,7 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
     shots = 100_000
     shot_threshold = int(0.001 * shots)
 
-    experiment_prefix = f"sudoku_{get_timestamp()}"
+    experiment_prefix = f"sudoku_{variable_count}v_{buffer_qubits}b_{get_timestamp()}"
 
     data = {
         "meta": {

@@ -142,7 +142,7 @@ def run_graph_coloring_experiment(node_count: int, edge_count: int, color_count:
     shots = 100_000
     shot_threshold = int(0.001 * shots)
 
-    experiment_prefix = f"graph_coloring_{get_timestamp()}"
+    experiment_prefix = f"graph_coloring_{node_count}n_{edge_count}e_{color_count}c_{buffer_qubits}b{get_timestamp()}"
 
     data = {
         "meta": {
