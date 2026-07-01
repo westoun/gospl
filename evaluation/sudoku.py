@@ -276,6 +276,8 @@ def count_constraint_violations(sudoku: List[List], variables: List[Variable], c
     default=None
 )
 def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit: bool, seed: int, tag: str):
+    assert variable_count <= 16, "Cannot have more variables than cells in the sudoku (16)."
+
     shots = 100_000
     shot_threshold = int(0.001 * shots)
 
@@ -284,6 +286,7 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
     data = {
         "meta": {
             "experiment_prefix": experiment_prefix,
+            "tag": tag,
             "timestamp": get_timestamp()
         },
         "params": {
@@ -291,17 +294,16 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
             "buffer_qubits": buffer_qubits,
             "store_circuit": store_circuit,
             "seed": seed,
-            "tag": tag,
             "shots": shots,
             "shot_threshold": shot_threshold,
         },
+        "problem_instance": None,
         "encoding": {
             "variables": None,
             "constraints": None,
             "qubits": None,
             "gates": None,
-            "depth": None,
-            "problem_repr": None
+            "depth": None
         },
         "results": []
     }
@@ -310,11 +312,11 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
     np_random.seed(seed)
 
     sudoku = initialize_sudoku(variable_count)
-    data["encoding"]["problem"] = sudoku
+    data["problem_instance"] = sudoku
 
     variables = encode_sudoku(sudoku)
 
-    builder = CircuitBuilder(variables, buffer_qubits=7)
+    builder = CircuitBuilder(variables, buffer_qubits=buffer_qubits)
 
     circuit = builder.create_circuit()
 
@@ -336,32 +338,31 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
     data["encoding"]["gates"] = count_gates(circuit)
     data["encoding"]["depth"] = circuit.depth()
 
-    simulator = AerSimulator(seed_simulator =  seed)
+    simulator = AerSimulator(seed_simulator=seed)
 
-    job = simulator.run(transpile(circuit, simulator, seed_transpiler=seed), shots=shots)
+    job = simulator.run(transpile(circuit, simulator,
+                        seed_transpiler=seed), shots=shots)
     result = job.result()
-
     counts = result.get_counts(circuit)
 
     results_per_constraint_violation = {}
 
     for solution, count in sorted(counts.items(), key=lambda item: -item[1])[:5]:
 
-        # Reverse measurement bit order as qiskit seems to index bottom up.
-        solution = solution[::-1]
-
         if count < shot_threshold:
             continue
 
-        cell_values = []
+        # Reverse measurement bit order as qiskit seems to index bottom up.
+        solution = solution[::-1]
 
+        cell_values = []
         for register_value in solution.split():
             index = int(register_value, 2)
             cell_values.append(index + 1)
 
         violations = count_constraint_violations(
             sudoku, variables, cell_values)
-        
+
         probability = count / shots
 
         if violations not in results_per_constraint_violation:
