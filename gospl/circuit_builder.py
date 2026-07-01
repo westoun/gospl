@@ -9,137 +9,6 @@ from gospl.constraint import Constraint, LessThan
 from .utils import extract_constraints
 
 
-def add_constraints_to_circuit(
-    circuit: QuantumCircuit,
-    variable_registers: List[QuantumRegister],
-    ancilla_register: QuantumRegister,
-    signal_register: QuantumRegister,
-    variables: List[Variable],
-    constraints: List[Constraint],
-    buffer_qubits: int
-) -> None:
-
-    added_constraints = 0
-
-    buffer_rounds = math.floor(len(constraints) / buffer_qubits)
-    for _ in range(buffer_rounds):
-
-        for i in range(buffer_qubits):
-            constraint = constraints[added_constraints + i]
-
-            variable_indices = [
-                variables.index(variable) for variable in constraint.variables
-            ]
-
-            rel_variable_registers = [
-                variable_registers[variable_index]
-                for variable_index in variable_indices
-            ]
-
-            constraint.build(
-                circuit,
-                variable_registers=rel_variable_registers,
-                ancilla_register=ancilla_register,
-                signal_register=signal_register,
-                signal_qubit=i
-            )
-
-        circuit.mcp(
-            lam=np.pi / math.ceil(len(constraints) / buffer_qubits),
-            control_qubits=signal_register[:-1],
-            target_qubit=signal_register[-1]
-        )
-
-        for i in range(buffer_qubits):
-            constraint = constraints[added_constraints + i]
-
-            variable_indices = [
-                variables.index(variable) for variable in constraint.variables
-            ]
-
-            rel_variable_registers = [
-                variable_registers[variable_index]
-                for variable_index in variable_indices
-            ]
-
-            constraint.build(
-                circuit,
-                variable_registers=rel_variable_registers,
-                ancilla_register=ancilla_register,
-                signal_register=signal_register,
-                signal_qubit=i
-            )
-
-        circuit.barrier()
-
-        added_constraints += buffer_qubits
-
-    # handle last round separately
-    remaining_constraints = len(constraints) - buffer_rounds * buffer_qubits
-
-    if remaining_constraints == 0:
-        return
-
-    for i in range(remaining_constraints):
-        constraint = constraints[added_constraints + i]
-
-        variable_indices = [
-            variables.index(variable) for variable in constraint.variables
-        ]
-
-        rel_variable_registers = [
-            variable_registers[variable_index]
-            for variable_index in variable_indices
-        ]
-
-        constraint.build(
-            circuit,
-            variable_registers=rel_variable_registers,
-            ancilla_register=ancilla_register,
-            signal_register=signal_register,
-            signal_qubit=i
-        )
-
-    circuit.mcp(
-        lam=np.pi / math.ceil(len(constraints) / buffer_qubits),
-        control_qubits=signal_register[:remaining_constraints],
-        target_qubit=signal_register[-1]
-    )
-
-    for i in range(remaining_constraints):
-        constraint = constraints[added_constraints + i]
-
-        variable_indices = [
-            variables.index(variable) for variable in constraint.variables
-        ]
-
-        rel_variable_registers = [
-            variable_registers[variable_index]
-            for variable_index in variable_indices
-        ]
-
-        constraint.build(
-            circuit,
-            variable_registers=rel_variable_registers,
-            ancilla_register=ancilla_register,
-            signal_register=signal_register,
-            signal_qubit=i
-        )
-
-    circuit.barrier()
-
-
-def prepare_kickback_qubit(circuit: QuantumCircuit,
-                           signal_register: QuantumRegister, buffer_qubits: int) -> None:
-    circuit.x(signal_register[buffer_qubits])
-
-
-def add_allowed_value_constraints(variables: List[Variable]) -> None:
-    for variable in variables:
-        if 2 ** variable.qubit_count > len(variable.allowed):
-            LessThan(variable, len(variable.allowed))
-
-
 class CircuitBuilder:
     variables: List[Variable]
     constraints: List[Constraint]
@@ -152,9 +21,11 @@ class CircuitBuilder:
     buffer_qubits: int
 
     def __init__(self, variables: List[Variable], buffer_qubits: int = None):
-        self.variables = variables
+        for variable in variables:
+            if 2 ** variable.qubit_count > len(variable.allowed):
+                LessThan(variable, len(variable.allowed))
 
-        add_allowed_value_constraints(self.variables)
+        self.variables = variables
 
         self.constraints = extract_constraints(variables)
 
@@ -187,7 +58,7 @@ class CircuitBuilder:
             total_ancilla_qubits, name="anc")
 
         self.signal_register = AncillaRegister(
-            self.buffer_qubits + 1, name="sig")
+            self.buffer_qubits, name="sig")
 
         self.classical_registers = [
             ClassicalRegister(variable.qubit_count, variable.name + "Cl")
@@ -203,10 +74,125 @@ class CircuitBuilder:
         circuit.barrier()
 
     def add_oracle(self, circuit: QuantumCircuit) -> None:
-        prepare_kickback_qubit(
-            circuit, self.signal_register, self.buffer_qubits)
-        add_constraints_to_circuit(circuit, self.variable_registers, self.ancilla_register, self.signal_register,
-                                   self.variables, self.constraints, self.buffer_qubits)
+        added_constraints = 0
+
+        buffer_rounds = math.floor(len(self.constraints) / self.buffer_qubits)
+        for _ in range(buffer_rounds):
+
+            for i in range(self.buffer_qubits):
+                constraint = self.constraints[added_constraints + i]
+
+                variable_indices = [
+                    self.variables.index(variable) for variable in constraint.variables
+                ]
+
+                rel_variable_registers = [
+                    self.variable_registers[variable_index]
+                    for variable_index in variable_indices
+                ]
+
+                constraint.build(
+                    circuit,
+                    variable_registers=rel_variable_registers,
+                    ancilla_register=self.ancilla_register,
+                    signal_register=self.signal_register,
+                    signal_qubit=i
+                )
+
+            if self.buffer_qubits == 1:
+                circuit.p(theta=np.pi /
+                          math.ceil(len(self.constraints) / self.buffer_qubits), qubit=self.signal_register[-1])
+            else:
+                circuit.mcp(
+                    lam=np.pi /
+                    math.ceil(len(self.constraints) / self.buffer_qubits),
+                    control_qubits=self.signal_register[:-1],
+                    target_qubit=self.signal_register[-1]
+                )
+
+            for i in range(self.buffer_qubits):
+                constraint = self.constraints[added_constraints + i]
+
+                variable_indices = [
+                    self.variables.index(variable) for variable in constraint.variables
+                ]
+
+                rel_variable_registers = [
+                    self.variable_registers[variable_index]
+                    for variable_index in variable_indices
+                ]
+
+                constraint.build(
+                    circuit,
+                    variable_registers=rel_variable_registers,
+                    ancilla_register=self.ancilla_register,
+                    signal_register=self.signal_register,
+                    signal_qubit=i
+                )
+
+            circuit.barrier()
+
+            added_constraints += self.buffer_qubits
+
+        # handle last round separately
+        remaining_constraints = len(
+            self.constraints) - buffer_rounds * self.buffer_qubits
+
+        if remaining_constraints == 0:
+            return
+
+        for i in range(remaining_constraints):
+            constraint = self.constraints[added_constraints + i]
+
+            variable_indices = [
+                self.variables.index(variable) for variable in constraint.variables
+            ]
+
+            rel_variable_registers = [
+                self.variable_registers[variable_index]
+                for variable_index in variable_indices
+            ]
+
+            constraint.build(
+                circuit,
+                variable_registers=rel_variable_registers,
+                ancilla_register=self.ancilla_register,
+                signal_register=self.signal_register,
+                signal_qubit=i
+            )
+
+        if self.buffer_qubits == 1:
+            circuit.p(theta=np.pi /
+                      math.ceil(len(self.constraints) / self.buffer_qubits), qubit=self.signal_register[-1])
+        else:
+            circuit.mcp(
+                lam=np.pi /
+                math.ceil(len(self.constraints) / self.buffer_qubits),
+                control_qubits=self.signal_register[:remaining_constraints],
+                target_qubit=self.signal_register[-1]
+            )
+
+        for i in range(remaining_constraints):
+            constraint = self.constraints[added_constraints + i]
+
+            variable_indices = [
+                self.variables.index(variable) for variable in constraint.variables
+            ]
+
+            rel_variable_registers = [
+                self.variable_registers[variable_index]
+                for variable_index in variable_indices
+            ]
+
+            constraint.build(
+                circuit,
+                variable_registers=rel_variable_registers,
+                ancilla_register=self.ancilla_register,
+                signal_register=self.signal_register,
+                signal_qubit=i
+            )
+
+        circuit.barrier()
 
     def add_diffusion(self, circuit: QuantumCircuit) -> None:
         for variable_register in self.variable_registers:
