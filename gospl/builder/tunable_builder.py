@@ -138,23 +138,35 @@ def prepare_kickback_qubit(circuit: QuantumCircuit,
 class TunableBuilder(BuilderBase):
     buffer_qubits: int
 
-    def __init__(self, variables: List[Variable], buffer_qubits: int = 1):
-        assert buffer_qubits >= 1
+    constraints: List[Constraint]
+
+    def __init__(self, variables: List[Variable], buffer_qubits: int = None):
+        self.constraints = extract_constraints(variables)
+
+        if buffer_qubits is None:
+            print(f"Setting buffer qubits to number of constraints ({len(self.constraints)}).")
+            buffer_qubits = len(self.constraints)
+            
+        elif buffer_qubits < 1:
+            print(f"Invalid number of buffer qubits specified ({buffer_qubits}). Setting to number of constraints ({len(self.constraints)}).")
+            buffer_qubits = len(self.constraints)
+
+        elif buffer_qubits > len(self.constraints):
+            print(f"More buffer qubits provided than constraints ({buffer_qubits} > {len(self.constraints)}). Setting buffer qubits to number of constraints.")
+            buffer_qubits = len(self.constraints)
+
         self.buffer_qubits = buffer_qubits
 
         super().__init__(variables)
 
     def create_circuit(self) -> QuantumCircuit:
-        constraints = extract_constraints(self.variables)
-        print("Constraint count: " + str(len(constraints)))
-
         self.variable_registers = [
             QuantumRegister(variable.qubit_count, variable.name)
             for variable in self.variables
         ]
 
         total_ancilla_qubits = max(
-            [constraint.ancilla_count for constraint in constraints])
+            [constraint.ancilla_count for constraint in self.constraints])
         self.ancilla_register = AncillaRegister(
             total_ancilla_qubits, name="anc")
 
@@ -170,8 +182,7 @@ class TunableBuilder(BuilderBase):
             *self.variable_registers, self.ancilla_register, self.signal_register, *self.classical_registers)
 
     def add_oracle(self, circuit: QuantumCircuit) -> None:
-        constraints = extract_constraints(self.variables)
         prepare_kickback_qubit(
             circuit, self.signal_register, self.buffer_qubits)
         add_constraints_to_circuit(circuit, self.variable_registers, self.ancilla_register, self.signal_register,
-                                   self.variables, constraints, self.buffer_qubits)
+                                   self.variables, self.constraints, self.buffer_qubits)
