@@ -359,8 +359,6 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
             index = int(register_value, 2)
             cell_values.append(index + 1)
 
-        solution = " - ".join([str(value) for value in cell_values])
-
         violations = count_constraint_violations(
             sudoku, variables, cell_values)
         
@@ -369,13 +367,13 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
         if violations not in results_per_constraint_violation:
             results_per_constraint_violation[violations] = {
                 "probabilities": [probability],
-                "solutions": [solution]
+                "solutions": [cell_values]
             }
         else:
             results_per_constraint_violation[violations]["probabilities"].append(
                 probability)
             results_per_constraint_violation[violations]["solutions"].append(
-                solution)
+                cell_values)
 
     for violations in sorted(results_per_constraint_violation.keys()):
         probabilities = results_per_constraint_violation[violations]["probabilities"]
