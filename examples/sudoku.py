@@ -62,23 +62,8 @@ def print_filled_sudoku(sudoku: List[List], cell_values: List[int]) -> None:
     print("# # # # # # #")
 
 
-if __name__ == "__main__":
-
-    # sudoku = [
-    #     [1, 2, None, 4],
-    #     [4, 3, None, 1],
-    #     [3, None, 1, 2],
-    #     [2, 1, 4, 3]
-    # ]
-    sudoku = [
-        [1, 3, 4, None],
-        [4, 2, None, 3],
-        [None, 1, 3, 4],
-        [3, 4, None, 1]
-    ]
-    print_sudoku(sudoku)
-
-    numbers = [1, 2, 3, 4]
+def encode_sudoku(sudoku: List[List]) -> List[Variable]:
+    numbers = [i + 1 for i in range(len(sudoku))]
     variables: List[Variable] = []
 
     for row_i, row in enumerate(sudoku):
@@ -147,7 +132,28 @@ if __name__ == "__main__":
             else:
                 Not(Equals(variable, value))
 
-    builder = CircuitBuilder(variables)
+    return variables
+
+
+if __name__ == "__main__":
+
+    # sudoku = [
+    #     [1, 2, None, 4],
+    #     [4, 3, None, 1],
+    #     [3, None, 1, 2],
+    #     [2, 1, 4, 3]
+    # ]
+    sudoku = [
+        [1, 3, 4, None],
+        [4, 2, None, 3],
+        [None, 1, 3, 4],
+        [3, 4, None, 1]
+    ]
+    print_sudoku(sudoku)
+
+    variables = encode_sudoku(sudoku)
+
+    builder = CircuitBuilder(variables, buffer_qubits=7)
 
     circuit = builder.create_circuit()
 
@@ -162,6 +168,8 @@ if __name__ == "__main__":
 
     circuit = RemoveBarriers()(circuit)
 
+    print("")
+    print("Constraint count: ", len(builder.constraints))
     print("Circuit depth: ", circuit.depth())
     print("Qubit count: ", circuit.width())
 
@@ -192,7 +200,7 @@ if __name__ == "__main__":
 
         for register_value in solution.split():
             index = int(register_value, 2)
-            solutions.append(str(numbers[index]))
+            solutions.append(str(index + 1))
 
         print("")
         print_filled_sudoku(sudoku, cell_values=solutions)

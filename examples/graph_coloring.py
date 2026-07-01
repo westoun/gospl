@@ -4,36 +4,43 @@ from qiskit.compiler import transpile
 from qiskit.transpiler.passes import RemoveBarriers
 import sys
 sys.path.append(os.path.abspath('..'))  # nopep8
+from typing import List
 
 from gospl.constraint import SameAs, Not, LessThan, Equals
 from gospl.variable import Variable
 from gospl.circuit_builder import CircuitBuilder
 
-if __name__ == "__main__":
 
-    colors = ["red", "green", "blue"]
-
-    adjaceny_matrix = [
-        [0, 1, 0],
-        [1, 0, 0],
-        [0, 0, 0]
-    ]
-
+def encode_graph(adjaceny_matrix: List, colors: List) -> List[Variable]:
     nodes = []
     for i in range(len(adjaceny_matrix)):
         node = Variable(f"Node{i+1}", colors)
         nodes.append(node)
 
     for i in range(len(adjaceny_matrix)):
-        
-        # Avoid self references or double counting of relationships 
+
+        # Avoid self references or double counting of relationships
         # due to undirectedness of edges.
-        for j in range(i + 1, len(adjaceny_matrix)):  
+        for j in range(i + 1, len(adjaceny_matrix)):
 
             if adjaceny_matrix[i][j] == 1:
                 Not(SameAs(nodes[i], nodes[j]))
+    return nodes
 
-    builder = CircuitBuilder(nodes, buffer_qubits=5)
+
+if __name__ == "__main__":
+
+    colors = ["red", "green", "blue"]
+
+    adjaceny_matrix = [
+        [0, 1, 1],
+        [1, 0, 1],
+        [1, 1, 0]
+    ]
+
+    nodes = encode_graph(adjaceny_matrix, colors)
+
+    builder = CircuitBuilder(nodes, buffer_qubits=3)
 
     circuit = builder.create_circuit()
 
@@ -45,9 +52,11 @@ if __name__ == "__main__":
 
     circuit.draw(output='mpl', filename='graph_coloring_circuit.png',
                  vertical_compression=None)
-    
+
     circuit = RemoveBarriers()(circuit)
 
+    print("")
+    print("Constraint count: ", len(builder.constraints))
     print("Circuit depth: ", circuit.depth())
     print("Qubit count: ", circuit.width())
 
