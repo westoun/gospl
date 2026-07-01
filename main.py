@@ -1,6 +1,6 @@
 from gospl.constraint import SameAs, Not, LessThan
 from gospl.variable import Variable
-from gospl.builder import CircuitBuilder
+from gospl.circuit_builder import CircuitBuilder
 
 from qiskit.qasm3 import dumps
 

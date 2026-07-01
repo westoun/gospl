@@ -7,8 +7,7 @@ sys.path.append(os.path.abspath('..'))  # nopep8
 
 from gospl.constraint import SameAs, Not, LessThan, Equals
 from gospl.variable import Variable
-from gospl.builder import SubPhaseCircuitBuilder, CircuitBuilder, TunableBuilder
-
+from gospl.circuit_builder import CircuitBuilder
 
 if __name__ == "__main__":
 
@@ -34,7 +33,7 @@ if __name__ == "__main__":
             if adjaceny_matrix[i][j] == 1:
                 Not(SameAs(nodes[i], nodes[j]))
 
-    builder = TunableBuilder(nodes, buffer_qubits=5)
+    builder = CircuitBuilder(nodes, buffer_qubits=5)
 
     circuit = builder.create_circuit()
 

@@ -7,7 +7,6 @@ from typing import List, Dict, Tuple
 from gospl.variable import Variable
 from gospl.constraint import Constraint, LessThan
 from .utils import extract_constraints
-from .builder_base import BuilderBase
 
 
 def add_constraints_to_circuit(
@@ -135,29 +134,46 @@ def prepare_kickback_qubit(circuit: QuantumCircuit,
     circuit.x(signal_register[buffer_qubits])
 
 
-class TunableBuilder(BuilderBase):
-    buffer_qubits: int
+def add_allowed_value_constraints(variables: List[Variable]) -> None:
+    for variable in variables:
+        if 2 ** variable.qubit_count > len(variable.allowed):
+            LessThan(variable, len(variable.allowed))
 
+
+class CircuitBuilder:
+    variables: List[Variable]
     constraints: List[Constraint]
 
+    variable_registers: List[QuantumRegister]
+    ancilla_register: QuantumRegister
+    signal_register: QuantumRegister
+    classical_registers: List[ClassicalRegister]
+
+    buffer_qubits: int
+
     def __init__(self, variables: List[Variable], buffer_qubits: int = None):
+        self.variables = variables
+
+        add_allowed_value_constraints(self.variables)
+
         self.constraints = extract_constraints(variables)
 
         if buffer_qubits is None:
-            print(f"Setting buffer qubits to number of constraints ({len(self.constraints)}).")
+            print(
+                f"Setting buffer qubits to number of constraints ({len(self.constraints)}).")
             buffer_qubits = len(self.constraints)
-            
+
         elif buffer_qubits < 1:
-            print(f"Invalid number of buffer qubits specified ({buffer_qubits}). Setting to number of constraints ({len(self.constraints)}).")
+            print(
+                f"Invalid number of buffer qubits specified ({buffer_qubits}). Setting to number of constraints ({len(self.constraints)}).")
             buffer_qubits = len(self.constraints)
 
         elif buffer_qubits > len(self.constraints):
-            print(f"More buffer qubits provided than constraints ({buffer_qubits} > {len(self.constraints)}). Setting buffer qubits to number of constraints.")
+            print(
+                f"More buffer qubits provided than constraints ({buffer_qubits} > {len(self.constraints)}). Setting buffer qubits to number of constraints.")
             buffer_qubits = len(self.constraints)
 
         self.buffer_qubits = buffer_qubits
-
-        super().__init__(variables)
 
     def create_circuit(self) -> QuantumCircuit:
         self.variable_registers = [
@@ -181,8 +197,38 @@ class TunableBuilder(BuilderBase):
         return QuantumCircuit(
             *self.variable_registers, self.ancilla_register, self.signal_register, *self.classical_registers)
 
+    def add_h_layer(self, circuit: QuantumCircuit) -> None:
+        for variable_register in self.variable_registers:
+            circuit.h(variable_register)
+        circuit.barrier()
+
     def add_oracle(self, circuit: QuantumCircuit) -> None:
         prepare_kickback_qubit(
             circuit, self.signal_register, self.buffer_qubits)
         add_constraints_to_circuit(circuit, self.variable_registers, self.ancilla_register, self.signal_register,
                                    self.variables, self.constraints, self.buffer_qubits)
+
+    def add_diffusion(self, circuit: QuantumCircuit) -> None:
+        for variable_register in self.variable_registers:
+            circuit.h(variable_register)
+            circuit.x(variable_register)
+
+        # Inspired by https://qiskit.qotlabs.org/learning/courses/utility-scale-quantum-computing/grovers-algorithm#3-diffusion-operator
+
+        qubit_count = sum(
+            [register.size for register in self.variable_registers])
+
+        circuit.h(qubit_count - 1)
+        circuit.mcx([i for i in range(0, qubit_count - 1)], qubit_count - 1)
+        circuit.h(qubit_count - 1)
+
+        for variable_register in self.variable_registers:
+            circuit.x(variable_register)
+            circuit.h(variable_register)
+
+        circuit.barrier()
+
+    def add_measurement(self, circuit: QuantumCircuit) -> None:
+
+        for variable_register, classical_register in zip(self.variable_registers, self.classical_registers):
+            circuit.measure(variable_register, classical_register)

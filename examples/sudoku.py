@@ -9,7 +9,7 @@ from typing import List
 
 from gospl.constraint import SameAs, Not, LessThan, Equals
 from gospl.variable import Variable
-from gospl.builder import SubPhaseCircuitBuilder, CircuitBuilder, TunableBuilder
+from gospl.circuit_builder import CircuitBuilder
 
 
 def print_sudoku(sudoku: List[List]):
@@ -147,7 +147,7 @@ if __name__ == "__main__":
             else:
                 Not(Equals(variable, value))
 
-    builder = TunableBuilder(variables, buffer_qubits=5)
+    builder = CircuitBuilder(variables)
 
     circuit = builder.create_circuit()
 
