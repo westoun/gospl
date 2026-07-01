@@ -6,17 +6,17 @@ from qiskit_aer import StatevectorSimulator
 
 if __name__ == "__main__":
 
-    qubit_count = 7
+    qubit_count = 10
     constraint_count = 10
     marked_states_per_constraint = {
         10: 1,
-        9: 5,
+        # 9: 5,
         # # 2: 3
-        1: 30
+        # 1: 30
     }
     max_n = math.ceil(math.sqrt(2**qubit_count))
 
-    circuit = QuantumCircuit(qubit_count + 2)
+    circuit = QuantumCircuit(qubit_count)
 
     def apply_oracle():
 
@@ -34,20 +34,12 @@ if __name__ == "__main__":
                     if bit_value == "0":
                         circuit.x(bit_i)
 
-                # apply mcx
-                circuit.mcx(control_qubits=list(range(qubit_count)),
-                            target_qubit=qubit_count)
-
                 # apply cphase
-                circuit.cp(
-                    theta=np.pi / constraint_count * satisfaction_count,
-                    control_qubit=qubit_count,
-                    target_qubit=qubit_count + 1
+                circuit.mcp(
+                    lam=np.pi / constraint_count * satisfaction_count,
+                    control_qubits=list(range(qubit_count - 1)),
+                    target_qubit=list(range(qubit_count))[-1]
                 )
-
-                # apply mcx
-                circuit.mcx(control_qubits=list(range(qubit_count)),
-                            target_qubit=qubit_count)
 
                 # map state back
                 for bit_i, bit_value in enumerate(bit_string):
@@ -80,9 +72,6 @@ if __name__ == "__main__":
         circuit.h(i)
 
     circuit.barrier()
-
-    # mark second ancilla for phase kickback
-    circuit.x(qubit_count + 1)
 
     for i in range(max_n):
         apply_oracle()
