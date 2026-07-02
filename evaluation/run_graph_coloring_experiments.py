@@ -4,9 +4,9 @@ seed_num = 10
 seed_offset = 0
 
 node_counts = [4]
-color_counts = 3
-edge_counts = [2, 4]
-buffer_qubits = [None, 1, 3, 5, 10]
+color_count = 3
+edge_counts = [3, 5]
+buffer_qubits = [None, 1, 3, 5]
 tag = None
 
 for seed_i in range(seed_num):
@@ -18,7 +18,7 @@ for seed_i in range(seed_num):
             for buffer_qubit_count in buffer_qubits:
 
                 command = ["python", "graph_coloring.py", "-n",
-                           str(node_count), "-e", str(edge_count), "-s", str(seed)]
+                           str(node_count), "-e", str(edge_count), "-c", str(color_count), "-s", str(seed)]
 
                 if buffer_qubit_count is not None:
                     command.extend(["-bq", str(buffer_qubit_count)])
