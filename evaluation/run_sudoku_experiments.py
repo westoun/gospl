@@ -1,6 +1,6 @@
 import subprocess
 
-seed_num = 30
+seed_num = 10
 seed_offset = 0
 
 variable_counts = [4]
