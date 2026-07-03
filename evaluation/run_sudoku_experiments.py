@@ -1,9 +1,9 @@
 import subprocess
 
-seed_num = 10
+seed_num = 30
 seed_offset = 0
 
-variable_counts = [4]
+variable_counts = [5]
 buffer_qubits = [None, 1, 3, 5, 10]
 tag = None 
 

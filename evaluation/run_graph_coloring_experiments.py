@@ -1,11 +1,11 @@
 import subprocess
 
-seed_num = 10
+seed_num = 30
 seed_offset = 0
 
-node_counts = [4]
-color_count = 3
-edge_counts = [3, 5]
+node_counts = [5]
+edge_counts = [8]
+color_count = 4
 buffer_qubits = [None, 1, 3, 5]
 tag = None
 
