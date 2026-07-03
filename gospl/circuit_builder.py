@@ -100,12 +100,11 @@ class CircuitBuilder:
                 )
 
             if self.buffer_qubits == 1:
-                circuit.p(theta=np.pi /
-                          math.ceil(len(self.constraints) / self.buffer_qubits), qubit=self.signal_register[-1])
+                circuit.p(theta=np.pi / len(self.constraints),
+                          qubit=self.signal_register[-1])
             else:
                 circuit.mcp(
-                    lam=np.pi /
-                    math.ceil(len(self.constraints) / self.buffer_qubits),
+                    lam=np.pi * self.buffer_qubits / len(self.constraints),
                     control_qubits=self.signal_register[:-1],
                     target_qubit=self.signal_register[-1]
                 )
@@ -161,15 +160,14 @@ class CircuitBuilder:
                 signal_qubit=i
             )
 
-        if self.buffer_qubits == 1:
-            circuit.p(theta=np.pi /
-                      math.ceil(len(self.constraints) / self.buffer_qubits), qubit=self.signal_register[-1])
+        if remaining_constraints == 1:
+            circuit.p(theta=np.pi / len(self.constraints),
+                      qubit=self.signal_register[0])
         else:
             circuit.mcp(
-                lam=np.pi /
-                math.ceil(len(self.constraints) / self.buffer_qubits),
-                control_qubits=self.signal_register[:remaining_constraints],
-                target_qubit=self.signal_register[-1]
+                lam=np.pi * remaining_constraints / len(self.constraints),
+                control_qubits=self.signal_register[:remaining_constraints - 1],
+                target_qubit=self.signal_register[remaining_constraints - 1]
             )
 
         for i in range(remaining_constraints):
