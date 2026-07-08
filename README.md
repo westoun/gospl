@@ -1,8 +1,12 @@
 # GOSPL
 
 This repository contains the source code to the paper
-_"GOSPL: An declarative problem-agnostic Programming Language for Grover Oracles"_
-by Stein, Klikovits, and Wimmer from the [Institute of Business Informatics - Software Engineering](https://se.jku.at/) at the [Johannes Kepler University](https://www.jku.at/en), Linz.
+_"A Constraint-Based DSL for the Automatic Generation of Grover Oracles"_
+by Stein, Klikovits, and Wimmer from the [Institute of Business Informatics - Software Engineering](https://se.jku.at/) at the [Johannes Kepler University](https://www.jku.at/en), Linz
+and Schenkenfelder from the [Software Competence Center Hagenberg](https://www.scch.at/).
+The `evaluation/` directory contains the code used in the evaluation section of the 
+paper.
+
 
 ## Installation
 
@@ -15,9 +19,9 @@ pip install -r requirements.txt
 
 ## Usage
 
-As the name suggests, GOSPL is a declarative programming language that 
-enables its user to develop oracles for Grover's algorithm without 
-any knowledge of quantum gates and qubits.
+GOSPL (Grover Oracle Specific Programming Language) is a declarative programming language that 
+enables its user to develop Grover oracle for constraint satisfaction problems without any 
+knowledge of quantum gates and qubits.
 
 The following code snippet shows how GOSPL can be used to derive an
 oracle circuit for the [map/graph coloring problem](https://en.wikipedia.org/wiki/Graph_coloring) of the [territories of Australia](https://en.wikipedia.org/wiki/States_and_territories_of_Australia).
@@ -48,11 +52,13 @@ Not(SameAs(sa, v))
 Not(SameAs(nsw, v))
 
 builder = CircuitBuilder([wa, nt, sa, q, nsw, v, t])
-circuit = builder.build()
+
+circuit = builder.create_circuit()
+
+builder.add_oracle(circuit)
 
 print(circuit)
 ```
-
 
 ## Contributing
 
