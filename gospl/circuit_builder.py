@@ -18,9 +18,9 @@ class CircuitBuilder:
     signal_register: QuantumRegister
     classical_registers: List[ClassicalRegister]
 
-    buffer_qubits: int
+    signal_qubits: int
 
-    def __init__(self, variables: List[Variable], buffer_qubits: int = None):
+    def __init__(self, variables: List[Variable], signal_qubits: int = None):
         for variable in variables:
             if 2 ** variable.qubit_count > len(variable.allowed):
                 LessThan(variable, len(variable.allowed))
@@ -29,22 +29,22 @@ class CircuitBuilder:
 
         self.constraints = extract_constraints(variables)
 
-        if buffer_qubits is None:
+        if signal_qubits is None:
             print(
-                f"Setting buffer qubits to number of constraints ({len(self.constraints)}).")
-            buffer_qubits = len(self.constraints)
+                f"Setting signal qubits to number of constraints ({len(self.constraints)}).")
+            signal_qubits = len(self.constraints)
 
-        elif buffer_qubits < 1:
+        elif signal_qubits < 1:
             print(
-                f"Invalid number of buffer qubits specified ({buffer_qubits}). Setting to number of constraints ({len(self.constraints)}).")
-            buffer_qubits = len(self.constraints)
+                f"Invalid number of signal qubits specified ({signal_qubits}). Setting to number of constraints ({len(self.constraints)}).")
+            signal_qubits = len(self.constraints)
 
-        elif buffer_qubits > len(self.constraints):
+        elif signal_qubits > len(self.constraints):
             print(
-                f"More buffer qubits provided than constraints ({buffer_qubits} > {len(self.constraints)}). Setting buffer qubits to number of constraints.")
-            buffer_qubits = len(self.constraints)
+                f"More signal qubits provided than constraints ({signal_qubits} > {len(self.constraints)}). Setting signal qubits to number of constraints.")
+            signal_qubits = len(self.constraints)
 
-        self.buffer_qubits = buffer_qubits
+        self.signal_qubits = signal_qubits
 
     def create_circuit(self) -> QuantumCircuit:
         self.variable_registers = [
@@ -58,7 +58,7 @@ class CircuitBuilder:
             total_ancilla_qubits, name="anc")
 
         self.signal_register = AncillaRegister(
-            self.buffer_qubits, name="sig")
+            self.signal_qubits, name="sig")
 
         self.classical_registers = [
             ClassicalRegister(variable.qubit_count, variable.name + "Cl")
@@ -76,10 +76,10 @@ class CircuitBuilder:
     def add_oracle(self, circuit: QuantumCircuit) -> None:
         added_constraints = 0
 
-        buffer_rounds = math.floor(len(self.constraints) / self.buffer_qubits)
+        buffer_rounds = math.floor(len(self.constraints) / self.signal_qubits)
         for _ in range(buffer_rounds):
 
-            for i in range(self.buffer_qubits):
+            for i in range(self.signal_qubits):
                 constraint = self.constraints[added_constraints + i]
 
                 variable_indices = [
@@ -99,17 +99,17 @@ class CircuitBuilder:
                     signal_qubit=i
                 )
 
-            if self.buffer_qubits == 1:
+            if self.signal_qubits == 1:
                 circuit.p(theta=np.pi / len(self.constraints),
                           qubit=self.signal_register[-1])
             else:
                 circuit.mcp(
-                    lam=np.pi * self.buffer_qubits / len(self.constraints),
+                    lam=np.pi * self.signal_qubits / len(self.constraints),
                     control_qubits=self.signal_register[:-1],
                     target_qubit=self.signal_register[-1]
                 )
 
-            for i in range(self.buffer_qubits):
+            for i in range(self.signal_qubits):
                 constraint = self.constraints[added_constraints + i]
 
                 variable_indices = [
@@ -131,11 +131,11 @@ class CircuitBuilder:
 
             circuit.barrier()
 
-            added_constraints += self.buffer_qubits
+            added_constraints += self.signal_qubits
 
         # handle last round separately
         remaining_constraints = len(
-            self.constraints) - buffer_rounds * self.buffer_qubits
+            self.constraints) - buffer_rounds * self.signal_qubits
 
         if remaining_constraints == 0:
             return

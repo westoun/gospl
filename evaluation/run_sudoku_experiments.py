@@ -14,13 +14,13 @@ experiment_setups = [
 for seed_i in range(seed_num):
     seed = seed_offset + seed_i
 
-    for variable_count, buffer_qubits in experiment_setups:
-        for buffer_qubit_count in buffer_qubits:
+    for variable_count, ancilla_qubits in experiment_setups:
+        for ancilla_qubit_count in ancilla_qubits:
             
             command = ["python", "sudoku.py", "-v", str(variable_count), "-s", str(seed)]
 
-            if buffer_qubit_count is not None:
-                command.extend(["-bq", str(buffer_qubit_count)])
+            if ancilla_qubit_count is not None:
+                command.extend(["-a", str(ancilla_qubit_count)])
 
             if tag is not None:
                 command.extend(["-t", tag])

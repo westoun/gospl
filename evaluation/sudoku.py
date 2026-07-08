@@ -248,9 +248,9 @@ def count_constraint_violations(sudoku: List[List], variables: List[Variable], c
     default=4
 )
 @click.option(
-    "--buffer-qubits",
-    "-bq",
-    "buffer_qubits",
+    "--ancilla-qubits",
+    "-a",
+    "ancilla_qubits",
     type=click.INT,
     default=None
 )
@@ -275,13 +275,13 @@ def count_constraint_violations(sudoku: List[List], variables: List[Variable], c
     type=click.STRING,
     default=None
 )
-def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit: bool, seed: int, tag: str):
+def run_sudoku_experiment(variable_count: int, ancilla_qubits: int, store_circuit: bool, seed: int, tag: str):
     assert variable_count <= 16, "Cannot have more variables than cells in the sudoku (16)."
 
     shots = 100_000
     shot_threshold = int(0.001 * shots)
 
-    experiment_prefix = f"sudoku_{variable_count}v_{buffer_qubits}b_{get_timestamp()}"
+    experiment_prefix = f"sudoku_{variable_count}v_{ancilla_qubits}a_{get_timestamp()}"
 
     data = {
         "meta": {
@@ -291,7 +291,7 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
         },
         "params": {
             "variable_count": variable_count,
-            "buffer_qubits": buffer_qubits,
+            "ancilla_qubits": ancilla_qubits,
             "store_circuit": store_circuit,
             "seed": seed,
             "shots": shots,
@@ -316,7 +316,7 @@ def run_sudoku_experiment(variable_count: int, buffer_qubits: int, store_circuit
 
     variables = encode_sudoku(sudoku)
 
-    builder = CircuitBuilder(variables, buffer_qubits=buffer_qubits)
+    builder = CircuitBuilder(variables, signal_qubits=ancilla_qubits)
 
     circuit = builder.create_circuit()
 

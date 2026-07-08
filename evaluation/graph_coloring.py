@@ -100,9 +100,9 @@ def count_constraint_violations(adjaceny_matrix: List, node_colors: List[str]) -
     default=3
 )
 @click.option(
-    "--buffer-qubits",
-    "-bq",
-    "buffer_qubits",
+    "--ancilla-qubits",
+    "-a",
+    "ancilla_qubits",
     type=click.INT,
     default=None
 )
@@ -127,7 +127,7 @@ def count_constraint_violations(adjaceny_matrix: List, node_colors: List[str]) -
     type=click.STRING,
     default=None
 )
-def run_graph_coloring_experiment(node_count: int, edge_count: int, color_count: int, buffer_qubits: int,
+def run_graph_coloring_experiment(node_count: int, edge_count: int, color_count: int, ancilla_qubits: int,
                                   store_circuit: bool, seed: int, tag: str):
     colors = ["red", "green", "blue", "yellow", "purple", "black",
               "white", "orange", "pink", "brown", "magenta", "cyan"]
@@ -142,7 +142,7 @@ def run_graph_coloring_experiment(node_count: int, edge_count: int, color_count:
     shots = 100_000
     shot_threshold = int(0.001 * shots)
 
-    experiment_prefix = f"graph_coloring_{node_count}n_{edge_count}e_{color_count}c_{buffer_qubits}b{get_timestamp()}"
+    experiment_prefix = f"graph_coloring_{node_count}n_{edge_count}e_{color_count}c_{ancilla_qubits}a{get_timestamp()}"
 
     data = {
         "meta": {
@@ -154,7 +154,7 @@ def run_graph_coloring_experiment(node_count: int, edge_count: int, color_count:
             "node_count": node_count,
             "edge_count": edge_count,
             "color_count": color_count,
-            "buffer_qubits": buffer_qubits,
+            "ancilla_qubits": ancilla_qubits,
             "store_circuit": store_circuit,
             "seed": seed,
             "shots": shots,
@@ -179,7 +179,7 @@ def run_graph_coloring_experiment(node_count: int, edge_count: int, color_count:
 
     nodes = encode_graph(adjaceny_matrix, colors)
 
-    builder = CircuitBuilder(nodes, buffer_qubits=buffer_qubits)
+    builder = CircuitBuilder(nodes, signal_qubits=ancilla_qubits)
 
     circuit = builder.create_circuit()
 
